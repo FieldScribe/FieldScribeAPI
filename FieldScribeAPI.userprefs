@@ -1,0 +1,24 @@
+﻿<Properties StartupConfiguration="{7B874044-3F91-44B5-9C13-EEC21F087982}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="FieldScribeAPI/Models/Athlete.cs">
+    <Files>
+      <File FileName="FieldScribeAPI/Program.cs" Line="21" Column="1" />
+      <File FileName="FieldScribeAPI/appsettings.json" Line="1" Column="1" />
+      <File FileName="FieldScribeAPI/Properties/launchSettings.json" Line="6" Column="49" />
+      <File FileName="FieldScribeAPI/Controllers/RootController.cs" Line="1" Column="1" />
+      <File FileName="FieldScribeAPI/Controllers/AthletesController.cs" Line="1" Column="1" />
+      <File FileName="FieldScribeAPI/Models/Athlete.cs" Line="13" Column="6" />
+      <File FileName="FieldScribeAPI/Services/IAthleteService.cs" Line="1" Column="1" />
+      <File FileName="FieldScribeAPI/Services/DefaultAthleteService.cs" Line="51" Column="15" />
+      <File FileName="FieldScribeAPI/Infrastructure/IonOutputFormatter.cs" Line="1" Column="1" />
+      <File FileName="FieldScribeAPI/Startup.cs" Line="90" Column="75" />
+      <File FileName="FieldScribeAPI/Models/AthleteEntity.cs" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MultiItemStartupConfigurations />
+  <MonoDevelop.Ide.ItemProperties.FieldScribeAPI PreferredExecutionTarget="MonoDevelop.Default" />
+</Properties>
