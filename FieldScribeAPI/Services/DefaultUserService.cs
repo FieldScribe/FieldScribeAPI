@@ -62,14 +62,14 @@ namespace FieldScribeAPI.Services
             string[] searchTerms,
             CancellationToken ct)
         {
-
             IQueryable<UserEntity> query = _userManager.Users;
 
-            var scribes = await _userManager.GetUsersInRoleAsync(DefaultRoles.Scribe);
+            IList<UserEntity> scribes = await _userManager
+                .GetUsersInRoleAsync(DefaultRoles.Scribe);
 
             query = query.Where(x => scribes.Contains(x));
 
-            if(searchTerms != null && searchTerms.Length > 0)
+            if (searchTerms != null && searchTerms.Length > 0)
                 query = query.Where(x => searchTerms.Any(y => x.Email.Contains(y))
                 || searchTerms.Any(y => x.FirstName.Contains(y)));
 
@@ -91,6 +91,38 @@ namespace FieldScribeAPI.Services
             };
         }
 
+        public async Task<PagedResults<User>> GetScribesByMeetAsync(
+            PagingOptions pagingOptions,
+            SortOptions<User, UserEntity> sortOptions,
+            SearchOptions<User, UserEntity> searchOptions,
+            int meetId,
+            CancellationToken ct)
+        {
+            IQueryable<UserEntity> query = _userManager.Users;
+
+            IList<UserEntity> scribes = await _userManager
+                .GetUsersForClaimAsync(
+                new Claim(DefaultClaims.Scribe, meetId.ToString()));
+
+            query = query.Where(x => scribes.Contains(x));
+
+            query = searchOptions.Apply(query);
+            query = sortOptions.Apply(query);
+
+            var size = await query.CountAsync(ct);
+
+            var items = await query
+                .Skip(pagingOptions.Offset.Value)
+                .Take(pagingOptions.Limit.Value)
+                .ProjectTo<User>()
+                .ToArrayAsync(ct);
+
+            return new PagedResults<User>
+            {
+                Items = items,
+                TotalSize = size
+            };
+        }
 
         public async Task<(bool Succeeded, string Error)> CreateUserAsync(RegisterForm form, string role)
         {
@@ -134,12 +166,12 @@ namespace FieldScribeAPI.Services
         {
             var user = await _userManager.FindByIdAsync(form.UserId.ToString());
 
-            if(user != null)
+            if (user != null)
             {
                 IdentityResult ir = await _userManager
                     .AddClaimAsync(user, new Claim(DefaultClaims.Scribe, form.meetId.ToString()));
 
-                return (ir.Succeeded, (ir.Succeeded? null : "Failed to add user as scribe" ));
+                return (ir.Succeeded, (ir.Succeeded ? null : "Failed to add user as scribe"));
             }
 
             return (false, "User not found");
@@ -176,7 +208,7 @@ namespace FieldScribeAPI.Services
             return returnUser;
         }
 
-        
+
         public async Task<(bool Succeeded, string Error)> ResetPasswordAsync(
             UserEntity user, string newPassword)
         {

@@ -23,7 +23,14 @@ namespace FieldScribeAPI.Services
             string[] searchTerms,
             CancellationToken ct);
 
-        Task <(bool Succeeded, string Error)> CreateUserAsync(RegisterForm form, string role);
+        Task<PagedResults<User>> GetScribesByMeetAsync(
+            PagingOptions pagingOptions,
+            SortOptions<User, UserEntity> sortOptions,
+            SearchOptions<User, UserEntity> searchOptions,
+            int meetId,
+            CancellationToken ct);
+
+        Task<(bool Succeeded, string Error)> CreateUserAsync(RegisterForm form, string role);
 
         Task<(bool Succeeded, string Error)> EditUserAsync(EditUserForm form, UserEntity user);
 

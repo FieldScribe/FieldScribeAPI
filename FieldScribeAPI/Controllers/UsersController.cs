@@ -122,6 +122,49 @@ namespace FieldScribeAPI.Controllers
             return Ok(collection);
         }
 
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [HttpGet("scribes/{meetId}", Name = nameof(GetScribesByMeetAsync))]
+        public async Task<IActionResult> GetScribesByMeetAsync(
+            [FromQuery] PagingOptions pagingOptions,
+            [FromQuery] SortOptions<User, UserEntity> sortOptions,
+            [FromQuery] SearchOptions<User, UserEntity> searchOptions,
+            int meetId,
+            CancellationToken ct)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ApiError(ModelState));
+
+            pagingOptions.Offset = pagingOptions.Offset ?? _defaultPagingOptions.Offset;
+            pagingOptions.Limit = pagingOptions.Limit ?? _defaultPagingOptions.Limit;
+
+            var users = new PagedResults<User>();
+
+            if (User.Identity.IsAuthenticated)
+            {
+                var canSeeEveryone = await _authService
+                    .AuthorizeAsync(User, "IsAdminOrTimer");
+
+                if (canSeeEveryone.Succeeded)
+                {
+                    users = await _userService.GetScribesByMeetAsync(
+                        pagingOptions, sortOptions, searchOptions,
+                        meetId, ct);
+                }
+                else
+                {
+                    var myself = await _userService.GetUserAsync(User);
+                    users.Items = new[] { myself };
+                    users.TotalSize = 1;
+                }
+            }
+
+            var collection = PagedCollection<User>.Create(
+                Link.To(nameof(GetVisibleUsersAsync)),
+                users.Items.ToArray(),
+                users.TotalSize,
+                pagingOptions);
+
+            return Ok(collection);
+        }
 
         [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpGet("me", Name = nameof(GetMeAsync))]
@@ -325,6 +368,14 @@ namespace FieldScribeAPI.Controllers
             }
 
             return Unauthorized();
+        }
+
+        // Helper Function
+
+        private IActionResult ConflictAction()
+        {
+            Response.StatusCode = StatusCodes.Status409Conflict;
+            return new EmptyResult();
         }
     }
 }
