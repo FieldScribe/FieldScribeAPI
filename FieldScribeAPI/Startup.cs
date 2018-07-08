@@ -82,6 +82,13 @@ namespace FieldScribeAPI
                 opt.ClaimsIdentity.UserNameClaimType = OpenIdConnectConstants.Claims.Name;
                 opt.ClaimsIdentity.UserIdClaimType = OpenIdConnectConstants.Claims.Subject;
                 opt.ClaimsIdentity.RoleClaimType = OpenIdConnectConstants.Claims.Role;
+
+                // Configure password requirements
+                opt.Password.RequiredLength = 8;
+                opt.Password.RequireUppercase = false;
+                opt.Password.RequireLowercase = false;
+                opt.Password.RequireDigit = false;
+                opt.Password.RequireNonAlphanumeric = false;
             });
 
             services.AddAuthentication()
