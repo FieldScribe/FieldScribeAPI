@@ -36,7 +36,7 @@ namespace FieldScribeAPI.Controllers
         }
 
 
-       // [Authorize(AuthenticationSchemes = "Bearer")]
+        // [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpGet(Name = nameof(GetVisibleUsersAsync))]
         public async Task<IActionResult> GetVisibleUsersAsync(
             [FromQuery] PagingOptions pagingOptions,
@@ -51,23 +51,23 @@ namespace FieldScribeAPI.Controllers
 
             var users = new PagedResults<User>();
 
-           // if (User.Identity.IsAuthenticated)
-           // {
-                var canSeeEveryone = true;// await _authService
-                    //.AuthorizeAsync(User, "IsAdminOrTimer");
+            // if (User.Identity.IsAuthenticated)
+            // {
+            var canSeeEveryone = true;// await _authService
+                                      //.AuthorizeAsync(User, "IsAdminOrTimer");
 
-                if(canSeeEveryone)
-                {
-                    users = await _userService.GetUsersAsync(
-                        pagingOptions, sortOptions, searchOptions, ct);
-                }
-                else
-                {
-                    var myself = await _userService.GetUserAsync(User);
-                    users.Items = new[] { myself };
-                    users.TotalSize = 1;
-                }
-           // }
+            if (canSeeEveryone)
+            {
+                users = await _userService.GetUsersAsync(
+                    pagingOptions, sortOptions, searchOptions, ct);
+            }
+            else
+            {
+                var myself = await _userService.GetUserAsync(User);
+                users.Items = new[] { myself };
+                users.TotalSize = 1;
+            }
+            // }
 
             var collection = PagedCollection<User>.Create(
                 Link.To(nameof(GetVisibleUsersAsync)),
@@ -94,15 +94,15 @@ namespace FieldScribeAPI.Controllers
 
             var users = new PagedResults<User>();
 
-             if (User.Identity.IsAuthenticated)
-             {
-                var canSeeEveryone =  await _authService
+            if (User.Identity.IsAuthenticated)
+            {
+                var canSeeEveryone = await _authService
                     .AuthorizeAsync(User, "IsAdminOrTimer");
 
                 if (canSeeEveryone.Succeeded)
                 {
                     users = await _userService.GetScribesAsync(
-                        pagingOptions, sortOptions, searchOptions, 
+                        pagingOptions, sortOptions, searchOptions,
                         searchTerms.SearchTerms, ct);
                 }
                 else
@@ -111,7 +111,7 @@ namespace FieldScribeAPI.Controllers
                     users.Items = new[] { myself };
                     users.TotalSize = 1;
                 }
-             }
+            }
 
             var collection = PagedCollection<User>.Create(
                 Link.To(nameof(GetVisibleUsersAsync)),
@@ -121,6 +121,7 @@ namespace FieldScribeAPI.Controllers
 
             return Ok(collection);
         }
+
 
         [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpGet("scribes/{meetId}", Name = nameof(GetScribesByMeetAsync))]
@@ -165,6 +166,7 @@ namespace FieldScribeAPI.Controllers
 
             return Ok(collection);
         }
+
 
         [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpGet("me", Name = nameof(GetMeAsync))]
@@ -213,8 +215,12 @@ namespace FieldScribeAPI.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(new ApiError(ModelState));
 
+            // Check if e-mail already exists
+            if (await _userManager.FindByEmailAsync(form.Email) != null)
+                return ConflictAction(); // --> Status Code 409: Conflict
+
             var (succeeded, error) = await _userService.CreateUserAsync(
-                    form, "Scribe");
+                    form, DefaultRoles.Scribe);
 
             if (succeeded) return Created(Url.Link(nameof(GetMeAsync), null), null);
 
@@ -240,12 +246,12 @@ namespace FieldScribeAPI.Controllers
                 var (succeeded, error) = await _userService.CreateUserAsync(
                     form, "Timer");
 
-                if (succeeded) return Created(Url.Link(nameof(GetMeAsync), null), null);            
+                if (succeeded) return Created(Url.Link(nameof(GetMeAsync), null), null);
             }
 
             return BadRequest(new ApiError
             {
-                Message = "Registation failed"                
+                Message = "Registation failed"
             });
         }
 
@@ -262,8 +268,8 @@ namespace FieldScribeAPI.Controllers
             // Check if UserId is current user's Id (reset own password)
             if (form.UserId == currentUser.Id)
             {
-                 (bool succeeded, string error) = await _userService.EditUserAsync
-                    (form, currentUser);
+                (bool succeeded, string error) = await _userService.EditUserAsync
+                   (form, currentUser);
 
                 if (succeeded) return Ok();
                 return BadRequest(new ApiError { Message = error });
@@ -297,7 +303,7 @@ namespace FieldScribeAPI.Controllers
             var canAddScribe = await _authService
                 .AuthorizeAsync(User, "IsAdminOrTimer");
 
-            if(canAddScribe.Succeeded)
+            if (canAddScribe.Succeeded)
             {
                 var (succeeded, error) = await _userService.AssignToMeetAsync(form, ct);
                 if (succeeded) return Ok();
@@ -322,7 +328,7 @@ namespace FieldScribeAPI.Controllers
 
             if (canRemoveScribe.Succeeded)
             {
-                var (succeeded, error) = await _userService.AssignToMeetAsync(form, ct);
+                var (succeeded, error) = await _userService.RemoveFromMeetAsync(form, ct);
                 if (succeeded) return Ok();
             }
 
@@ -357,10 +363,10 @@ namespace FieldScribeAPI.Controllers
 
             // Else, check if current user id timer or admin and user (whose
             // password is being reset) is in "Scribe" role
-            if ( await _userManager.IsInRoleAsync(user, DefaultRoles.Scribe)
+            if (await _userManager.IsInRoleAsync(user, DefaultRoles.Scribe)
                 && _authService.AuthorizeAsync(User, "IsAdminOrTimer").Result.Succeeded)
             {
-                var(succeeded, error) = await _userService.ResetPasswordAsync
+                var (succeeded, error) = await _userService.ResetPasswordAsync
                     (user, form.NewPassword);
 
                 if (succeeded) return Ok();
