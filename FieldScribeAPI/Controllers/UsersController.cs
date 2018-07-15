@@ -323,7 +323,7 @@ namespace FieldScribeAPI.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(new ApiError(ModelState));
 
-            var canRemoveScribe = await _authService
+            AuthorizationResult canRemoveScribe = await _authService
                 .AuthorizeAsync(User, "IsAdminOrTimer");
 
             if (canRemoveScribe.Succeeded)
@@ -334,10 +334,43 @@ namespace FieldScribeAPI.Controllers
 
             return BadRequest(new ApiError
             {
-                Message = "Failed to remove scribe to meet"
+                Message = "Failed to remove scribe from meet"
             });
         }
 
+
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [HttpPost("delete", Name = nameof(RemoveFromMeetAsync))]
+        public async Task<IActionResult> DeleteUserAsync(
+        [FromBody] Guid userId, CancellationToken ct)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ApiError(ModelState));
+
+            UserEntity user = await _userManager.FindByIdAsync(userId.ToString());
+
+            // Check if UserId is current user's Id (reset own password)
+            if (userId == user.Id)
+            {
+                var (succeeded, error) = await _userService.DeleteUserAsync(user, ct);
+
+                if (succeeded) return Ok();
+                return BadRequest(new ApiError { Message = error });
+            }           
+
+            if (await _userManager.IsInRoleAsync(user, DefaultRoles.Scribe) &&
+                (await _authService.AuthorizeAsync(User, "IsAdminOrTimer")).Succeeded)
+            {
+                var (succeeded, error) = await _userService.DeleteUserAsync(user, ct);
+
+                if (succeeded) return Ok();
+                return BadRequest(new ApiError { Message = error });
+            }
+
+            return BadRequest(new ApiError
+            {
+                Message = "Failed to delete account"
+            });
+        }
 
 
         [Authorize(AuthenticationSchemes = "Bearer")]

@@ -188,7 +188,26 @@ namespace FieldScribeAPI.Services
                 IdentityResult ir = await _userManager
                     .RemoveClaimAsync(user, new Claim(DefaultClaims.Scribe, form.meetId.ToString()));
 
-                return (true, null);
+                if (ir.Succeeded)
+                    return (true, null);
+                else
+                    return (false, "Failed to remove user from meet");
+            }
+
+            return (false, "User not found");
+        }
+
+        public async Task<(bool Succeeded, string Error)> DeleteUserAsync(
+            UserEntity user, CancellationToken ct)
+        {
+            if(user != null)
+            {
+                IdentityResult result = await _userManager.DeleteAsync(user);
+
+                if (result.Succeeded)
+                    return (true, null);
+
+                return (false, "Failed to delete user");
             }
 
             return (false, "User not found");

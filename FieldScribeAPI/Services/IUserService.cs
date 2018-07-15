@@ -40,6 +40,9 @@ namespace FieldScribeAPI.Services
         Task<(bool Succeeded, string Error)> RemoveFromMeetAsync(
             AssignToMeetForm form, CancellationToken ct);
 
+        Task<(bool Succeeded, string Error)> DeleteUserAsync(
+            UserEntity user, CancellationToken ct);
+
         Task<User> GetUserAsync(ClaimsPrincipal user);
 
         Task<(bool Succeeded, string Error)> ResetPasswordAsync(
