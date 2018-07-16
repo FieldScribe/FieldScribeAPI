@@ -222,7 +222,12 @@ namespace FieldScribeAPI.Controllers
             var (succeeded, error) = await _userService.CreateUserAsync(
                     form, DefaultRoles.Scribe);
 
-            if (succeeded) return Created(Url.Link(nameof(GetMeAsync), null), null);
+            if (succeeded)
+            {
+                UserEntity newUser = await _userManager.FindByEmailAsync(form.Email);
+                return Created(nameof(UsersController.GetUserByIdAsync),
+                new { newUser.Id });
+            }
 
             return BadRequest(new ApiError
             {
@@ -340,7 +345,7 @@ namespace FieldScribeAPI.Controllers
 
 
         [Authorize(AuthenticationSchemes = "Bearer")]
-        [HttpPost("delete", Name = nameof(RemoveFromMeetAsync))]
+        [HttpPost("delete", Name = nameof(DeleteUserAsync))]
         public async Task<IActionResult> DeleteUserAsync(
         [FromBody] Guid userId, CancellationToken ct)
         {
@@ -348,8 +353,16 @@ namespace FieldScribeAPI.Controllers
 
             UserEntity user = await _userManager.FindByIdAsync(userId.ToString());
 
+            if (user == null)
+                return BadRequest(new ApiError
+                {
+                    Message = "User does not exist"
+                });
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
             // Check if UserId is current user's Id (reset own password)
-            if (userId == user.Id)
+            if (userId == currentUser.Id)
             {
                 var (succeeded, error) = await _userService.DeleteUserAsync(user, ct);
 
